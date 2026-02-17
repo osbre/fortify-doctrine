@@ -7,6 +7,12 @@ description: Laravel Fortify headless authentication backend development. Activa
 
 Fortify is a headless authentication backend that provides authentication routes and controllers for Laravel applications.
 
+This fork uses **Doctrine ORM** instead of Eloquent:
+- Entities use public properties (camelCase) — no getters/setters
+- Persistence via `EntityManagerInterface::flush()` — never `$user->save()`
+- Schema derived from entity attributes — no Fortify migrations to publish
+- Auth provider: `doctrine` driver with `model` pointing to User entity
+
 ## Documentation
 
 Use `search-docs` for detailed Laravel Fortify patterns and documentation.
@@ -37,9 +43,10 @@ Enable in `config/fortify.php` features array:
 ### Two-Factor Authentication Setup
 
 ```
-- [ ] Add TwoFactorAuthenticatable trait to User model
+- [ ] Add TwoFactorAuthenticatable trait to User entity
+- [ ] Add twoFactorSecret, twoFactorRecoveryCodes, twoFactorConfirmedAt properties to User entity
 - [ ] Enable feature in config/fortify.php
-- [ ] If the `*_add_two_factor_columns_to_users_table.php` migration is missing, publish via `php artisan vendor:publish --tag=fortify-migrations` and migrate
+- [ ] Update the database schema to reflect the new entity columns
 - [ ] Set up view callbacks in FortifyServiceProvider
 - [ ] Create 2FA management UI
 - [ ] Test QR code and recovery codes
@@ -51,7 +58,7 @@ Enable in `config/fortify.php` features array:
 
 ```
 - [ ] Enable emailVerification feature in config
-- [ ] Implement MustVerifyEmail interface on User model
+- [ ] Implement MustVerifyEmail interface on User entity
 - [ ] Set up verifyEmailView callback
 - [ ] Add verified middleware to protected routes
 - [ ] Test verification email flow
@@ -103,7 +110,7 @@ Override authentication behavior using `Fortify::authenticateUsing()` for custom
 
 ### Registration Customization
 
-Modify `app/Actions/Fortify/CreateNewUser.php` to customize user creation logic, validation rules, and additional fields.
+Modify `app/Actions/Fortify/CreateNewUser.php` to customize user creation logic, validation rules, and additional fields. Use EntityManager to persist — never `forceFill()->save()`.
 
 ### Rate Limiting
 
