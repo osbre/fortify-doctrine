@@ -44,7 +44,7 @@ class PasswordControllerTest extends OrchestraTestCase
         $user = $this->createUser();
 
         try {
-            (new UpdateUserPassword)->update($user, [
+            app(UpdateUserPassword::class)->update($user, [
                 'password' => 'new-password',
                 'password_confirmation' => 'new-password',
             ]);
@@ -61,7 +61,7 @@ class PasswordControllerTest extends OrchestraTestCase
         $user = $this->createUser();
 
         try {
-            (new UpdateUserPassword)->update($user, [
+            app(UpdateUserPassword::class)->update($user, [
                 'current_password' => 'invalid-password',
                 'password' => 'new-password',
                 'password_confirmation' => 'new-password',
