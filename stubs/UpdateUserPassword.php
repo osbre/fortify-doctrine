@@ -2,25 +2,26 @@
 
 namespace App\Actions\Fortify;
 
+use App\Entities\User;
 use Doctrine\ORM\EntityManagerInterface;
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\UpdatesUserPasswords;
 
 class UpdateUserPassword implements UpdatesUserPasswords
 {
     use PasswordValidationRules;
 
+    public function __construct(
+        protected EntityManagerInterface $em,
+    ) {}
+
     /**
      * Validate and update the user's password.
      *
      * @param  array<string, string>  $input
-     *
-     * @throws ValidationException
      */
-    public function update(Authenticatable $user, array $input): void
+    public function update(User $user, array $input): void
     {
         Validator::make($input, [
             'current_password' => ['required', 'string', 'current_password:web'],
@@ -31,6 +32,6 @@ class UpdateUserPassword implements UpdatesUserPasswords
 
         $user->password = Hash::make($input['password']);
 
-        app(EntityManagerInterface::class)->flush();
+        $this->em->flush();
     }
 }
