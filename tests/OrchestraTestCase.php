@@ -14,6 +14,15 @@ abstract class OrchestraTestCase extends TestCase
 
     protected EntityManagerInterface $em;
 
+    public static function setUpBeforeClass(): void
+    {
+        if (! class_exists(\App\Entities\User::class, false)) {
+            class_alias(User::class, \App\Entities\User::class);
+        }
+
+        parent::setUpBeforeClass();
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
