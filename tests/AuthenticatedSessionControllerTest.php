@@ -6,21 +6,16 @@ use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Foundation\Auth\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Laravel\Fortify\Contracts\LoginViewResponse;
 use Laravel\Fortify\LoginRateLimiter;
 use Mockery;
-use Orchestra\Testbench\Attributes\WithMigration;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-#[WithMigration]
 class AuthenticatedSessionControllerTest extends OrchestraTestCase
 {
-    use RefreshDatabase;
-
     public function test_the_login_view_is_returned()
     {
         $this->mock(LoginViewResponse::class)

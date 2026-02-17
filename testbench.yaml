@@ -1,5 +1,2 @@
 providers:
   - Laravel\Fortify\FortifyServiceProvider
-
-migrations:
-  - database/migrations

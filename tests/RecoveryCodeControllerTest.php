@@ -3,14 +3,11 @@
 namespace Laravel\Fortify\Tests;
 
 use Illuminate\Foundation\Auth\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
 
 class RecoveryCodeControllerTest extends OrchestraTestCase
 {
-    use RefreshDatabase;
-
     public function test_new_recovery_codes_can_be_generated()
     {
         Event::fake();

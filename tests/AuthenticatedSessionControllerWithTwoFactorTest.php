@@ -3,7 +3,6 @@
 namespace Laravel\Fortify\Tests;
 
 use Illuminate\Foundation\Application;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Hash;
@@ -14,16 +13,12 @@ use Laravel\Fortify\Features;
 use Laravel\Fortify\Tests\Models\UserWithTwoFactor;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use Orchestra\Testbench\Attributes\WithConfig;
-use Orchestra\Testbench\Attributes\WithMigration;
 use PragmaRX\Google2FA\Google2FA;
 
-#[WithMigration]
 #[DefineEnvironment('withTwoFactorAuthentication')]
 #[WithConfig('auth.providers.users.model', UserWithTwoFactor::class)]
 class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
 {
-    use RefreshDatabase;
-
     public function test_user_is_redirected_to_challenge_when_using_two_factor_authentication()
     {
         Event::fake();

@@ -3,19 +3,13 @@
 namespace Laravel\Fortify\Tests;
 
 use Illuminate\Foundation\Auth\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
 use Laravel\Fortify\Contracts\ConfirmPasswordViewResponse;
 use Laravel\Fortify\Fortify;
 use Orchestra\Testbench\Attributes\WithConfig;
-use Orchestra\Testbench\Attributes\WithMigration;
-
-#[WithMigration]
 class ConfirmablePasswordControllerTest extends OrchestraTestCase
 {
-    use RefreshDatabase;
-
     protected $user;
 
     protected function afterRefreshingDatabase()

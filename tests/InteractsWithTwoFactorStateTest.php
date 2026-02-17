@@ -2,18 +2,13 @@
 
 namespace Laravel\Fortify\Tests;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Tests\Models\UserWithTwoFactor;
 use Laravel\Fortify\Tests\Requests\FormRequestInteractsWithTwoFactorState;
-use Orchestra\Testbench\Attributes\WithMigration;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-#[WithMigration]
 class InteractsWithTwoFactorStateTest extends OrchestraTestCase
 {
-    use RefreshDatabase;
-
     protected function setUp(): void
     {
         parent::setUp();

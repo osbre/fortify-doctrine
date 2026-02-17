@@ -5,7 +5,6 @@ namespace Laravel\Fortify\Tests;
 use App\Actions\Fortify\UpdateUserPassword;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\PasswordBroker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\UpdatesUserPasswords;
@@ -13,8 +12,6 @@ use Mockery;
 
 class PasswordControllerTest extends OrchestraTestCase
 {
-    use RefreshDatabase;
-
     public function test_passwords_can_be_updated()
     {
         $user = UserFactory::new()->create();
