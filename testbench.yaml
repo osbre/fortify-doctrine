@@ -1,2 +1,3 @@
 providers:
+  - LaravelDoctrine\ORM\DoctrineServiceProvider
   - Laravel\Fortify\FortifyServiceProvider

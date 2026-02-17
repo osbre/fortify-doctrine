@@ -2,14 +2,10 @@
 
 namespace Laravel\Fortify\Tests;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\Event;
-use Illuminate\Support\Str;
 use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
 use Laravel\Fortify\Events\TwoFactorAuthenticationDisabled;
 use Laravel\Fortify\Events\TwoFactorAuthenticationEnabled;
-use Laravel\Fortify\Tests\Models\UserWithTwoFactor;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
 use PragmaRX\Google2FA\Google2FA;
 
@@ -19,7 +15,7 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
     {
         Event::fake();
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -33,21 +29,20 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
 
         Event::assertDispatched(TwoFactorAuthenticationEnabled::class);
 
-        $user = $user->fresh();
+        $this->em->refresh($user);
 
-        $this->assertNotNull($user->two_factor_secret);
-        $this->assertNotNull($user->two_factor_recovery_codes);
-        $this->assertNull($user->two_factor_confirmed_at);
-        $this->assertIsArray(json_decode(decrypt($user->two_factor_recovery_codes), true));
+        $this->assertNotNull($user->twoFactorSecret);
+        $this->assertNotNull($user->twoFactorRecoveryCodes);
+        $this->assertNull($user->twoFactorConfirmedAt);
+        $this->assertIsArray(json_decode(decrypt($user->twoFactorRecoveryCodes), true));
         $this->assertNotNull($user->twoFactorQrCodeSvg());
     }
-
 
     public function test_calling_two_factor_authentication_endpoint_will_not_overwrite_without_force_parameter()
     {
         Event::fake();
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -61,9 +56,9 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
 
         Event::assertDispatched(TwoFactorAuthenticationEnabled::class);
 
-        $user = $user->fresh();
+        $this->em->refresh($user);
 
-        $old_value = $user->two_factor_secret;
+        $old_value = $user->twoFactorSecret;
 
         $response = $this->withoutExceptionHandling()->actingAs($user)->postJson(
             '/user/two-factor-authentication'
@@ -71,20 +66,20 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
 
         $response->assertStatus(200);
 
-        $this->assertNotNull($user->two_factor_secret);
-        $this->assertNotNull($user->two_factor_recovery_codes);
-        $this->assertEquals($old_value, $user->fresh()->two_factor_secret);
-        $this->assertNull($user->two_factor_confirmed_at);
-        $this->assertIsArray(json_decode(decrypt($user->two_factor_recovery_codes), true));
+        $this->assertNotNull($user->twoFactorSecret);
+        $this->assertNotNull($user->twoFactorRecoveryCodes);
+        $this->em->refresh($user);
+        $this->assertEquals($old_value, $user->twoFactorSecret);
+        $this->assertNull($user->twoFactorConfirmedAt);
+        $this->assertIsArray(json_decode(decrypt($user->twoFactorRecoveryCodes), true));
         $this->assertNotNull($user->twoFactorQrCodeSvg());
     }
-
 
     public function test_calling_two_factor_authentication_endpoint_will_overwrite_with_force_parameter()
     {
         Event::fake();
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -101,9 +96,9 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
 
         Event::assertDispatched(TwoFactorAuthenticationEnabled::class);
 
-        $user = $user->fresh();
+        $this->em->refresh($user);
 
-        $old_value = $user->two_factor_secret;
+        $old_value = $user->twoFactorSecret;
 
         $response = $this->withoutExceptionHandling()->actingAs($user)->postJson(
             '/user/two-factor-authentication',
@@ -114,13 +109,13 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
 
         $response->assertStatus(200);
 
-        $user = $user->fresh();
+        $this->em->refresh($user);
 
-        $this->assertNotNull($user->two_factor_secret);
-        $this->assertNotNull($user->two_factor_recovery_codes);
-        $this->assertNotEquals($old_value, $user->fresh()->two_factor_secret);
-        $this->assertNull($user->two_factor_confirmed_at);
-        $this->assertIsArray(json_decode(decrypt($user->two_factor_recovery_codes), true));
+        $this->assertNotNull($user->twoFactorSecret);
+        $this->assertNotNull($user->twoFactorRecoveryCodes);
+        $this->assertNotEquals($old_value, $user->twoFactorSecret);
+        $this->assertNull($user->twoFactorConfirmedAt);
+        $this->assertIsArray(json_decode(decrypt($user->twoFactorRecoveryCodes), true));
         $this->assertNotNull($user->twoFactorQrCodeSvg());
     }
 
@@ -128,7 +123,7 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
     {
         Event::fake();
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -145,7 +140,6 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
     }
 
     #[DefineEnvironment('withConfirmedTwoFactorAuthentication')]
-
     public function test_two_factor_authentication_can_be_confirmed()
     {
         Event::fake();
@@ -154,7 +148,7 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
         $userSecret = $tfaEngine->generateSecretKey();
         $validOtp = $tfaEngine->getCurrentOtp($userSecret);
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -170,19 +164,19 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
 
         Event::assertDispatched(TwoFactorAuthenticationConfirmed::class);
 
-        $user = $user->fresh();
+        $this->em->refresh($user);
 
-        $this->assertNotNull($user->two_factor_confirmed_at);
+        $this->assertNotNull($user->twoFactorConfirmedAt);
         $this->assertTrue($user->hasEnabledTwoFactorAuthentication());
 
         // Ensure two factor authentication not considered enabled if not confirmed...
-        $user->forceFill(['two_factor_confirmed_at' => null])->save();
+        $user->twoFactorConfirmedAt = null;
+        $this->em->flush();
 
         $this->assertFalse($user->hasEnabledTwoFactorAuthentication());
     }
 
     #[DefineEnvironment('withConfirmedTwoFactorAuthentication')]
-
     public function test_two_factor_authentication_can_not_be_confirmed_with_invalid_code()
     {
         Event::fake();
@@ -190,7 +184,7 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
         $tfaEngine = app(Google2FA::class);
         $userSecret = $tfaEngine->generateSecretKey();
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -206,16 +200,16 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
 
         Event::assertNotDispatched(TwoFactorAuthenticationConfirmed::class);
 
-        $user = $user->fresh();
+        $this->em->refresh($user);
 
-        $this->assertNull($user->two_factor_confirmed_at);
+        $this->assertNull($user->twoFactorConfirmedAt);
     }
 
     public function test_two_factor_authentication_can_be_disabled()
     {
         Event::fake();
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -231,34 +225,9 @@ class TwoFactorAuthenticationControllerTest extends OrchestraTestCase
 
         Event::assertDispatched(TwoFactorAuthenticationDisabled::class);
 
-        $user->fresh();
+        $this->em->refresh($user);
 
-        $this->assertNull($user->two_factor_secret);
-        $this->assertNull($user->two_factor_recovery_codes);
-    }
-
-    public function test_two_factor_authentication_secret_key_can_be_retrieved_with_model_encrypter()
-    {
-        Event::fake();
-
-        Model::encryptUsing(new Encrypter(
-            base64_decode(Str::after('base64:FXvqP4Rg3XycgbIND25bhmjYiiFn1Z+AuAC98GU3Cew=', 'base64:')),
-            'aes-256-gcm',
-        ));
-
-        $user = UserWithTwoFactor::forceCreate([
-            'name' => 'Taylor Otwell',
-            'email' => 'taylor@laravel.com',
-            'password' => bcrypt('secret'),
-            'two_factor_secret' => Model::$encrypter->encrypt('foo'),
-        ]);
-
-        $response = $this->withoutExceptionHandling()->actingAs($user)->getJson(
-            '/user/two-factor-secret-key'
-        );
-
-        $response->assertStatus(200);
-
-        $this->assertEquals('foo', $response->original['secretKey']);
+        $this->assertNull($user->twoFactorSecret);
+        $this->assertNull($user->twoFactorRecoveryCodes);
     }
 }

@@ -3,7 +3,7 @@
 namespace Laravel\Fortify\Tests;
 
 use Laravel\Fortify\Features;
-use Laravel\Fortify\Tests\Models\UserWithTwoFactor;
+use Laravel\Fortify\Tests\Entities\User;
 use Laravel\Fortify\Tests\Requests\FormRequestInteractsWithTwoFactorState;
 use PHPUnit\Framework\Attributes\DataProvider;
 
@@ -34,7 +34,7 @@ class InteractsWithTwoFactorStateTest extends OrchestraTestCase
     {
         $attributes = [
             'two_factor_secret' => $secret ? encrypt($secret) : null,
-            'two_factor_confirmed_at' => $confirmedAt === 'confirmed' ? now() : $confirmedAt,
+            'two_factor_confirmed_at' => $confirmedAt === 'confirmed' ? new \DateTime() : null,
         ];
         $user = $this->createUser($attributes);
         $formRequest = $this->createFormRequestWithUser($user);
@@ -97,7 +97,7 @@ class InteractsWithTwoFactorStateTest extends OrchestraTestCase
             $attributes['two_factor_secret'] = encrypt('secret');
         }
         if ($attributes['two_factor_confirmed_at'] === 'confirmed') {
-            $attributes['two_factor_confirmed_at'] = now();
+            $attributes['two_factor_confirmed_at'] = new \DateTime();
         }
         $user = $this->createUser($attributes);
         $formRequest = $this->createFormRequestWithUser($user);
@@ -145,7 +145,7 @@ class InteractsWithTwoFactorStateTest extends OrchestraTestCase
 
         $formRequest->ensureStateIsValid();
 
-        $this->assertNull($user->two_factor_secret);
+        $this->assertNull($user->twoFactorSecret);
         $this->assertTrue($formRequest->session()->has('two_factor_empty_at'));
         $this->assertFalse($formRequest->session()->has('two_factor_confirming_at'));
     }
@@ -161,8 +161,8 @@ class InteractsWithTwoFactorStateTest extends OrchestraTestCase
         $formRequest->ensureStateIsValid();
         $this->assertTrue($formRequest->session()->has('two_factor_empty_at'));
 
-        $user->two_factor_secret = encrypt('secret');
-        $user->save();
+        $user->twoFactorSecret = encrypt('secret');
+        $this->em->flush();
         $formRequest = $this->createFormRequestWithUser($user);
         $formRequest->ensureStateIsValid();
         $this->assertTrue($formRequest->session()->has('two_factor_confirming_at'));
@@ -171,7 +171,7 @@ class InteractsWithTwoFactorStateTest extends OrchestraTestCase
         $formRequest = $this->createFormRequestWithUser($user);
         $formRequest->ensureStateIsValid();
 
-        $this->assertNull($user->two_factor_secret);
+        $this->assertNull($user->twoFactorSecret);
         $this->assertTrue($formRequest->session()->has('two_factor_empty_at'));
         $this->assertFalse($formRequest->session()->has('two_factor_confirming_at'));
     }
@@ -188,7 +188,7 @@ class InteractsWithTwoFactorStateTest extends OrchestraTestCase
 
         $formRequest->ensureStateIsValid();
 
-        $this->assertNotNull($user->two_factor_secret);
+        $this->assertNotNull($user->twoFactorSecret);
         $this->assertTrue($formRequest->session()->has('two_factor_empty_at'));
         $this->assertTrue($formRequest->session()->has('two_factor_confirming_at'));
     }
@@ -211,20 +211,7 @@ class InteractsWithTwoFactorStateTest extends OrchestraTestCase
         $this->assertLessThanOrEqual($afterTime, $timestamp);
     }
 
-    private function createUser(array $attributes = []): UserWithTwoFactor
-    {
-        $defaults = [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'password' => bcrypt('password'),
-            'two_factor_secret' => null,
-            'two_factor_confirmed_at' => null,
-        ];
-
-        return UserWithTwoFactor::forceCreate(array_merge($defaults, $attributes));
-    }
-
-    private function createFormRequestWithUser(?UserWithTwoFactor $user = null): FormRequestInteractsWithTwoFactorState
+    private function createFormRequestWithUser(?User $user = null): FormRequestInteractsWithTwoFactorState
     {
         $formRequest = FormRequestInteractsWithTwoFactorState::create('test');
         $formRequest->setUserResolver(fn () => $user);

@@ -2,19 +2,22 @@
 
 namespace Laravel\Fortify\Tests;
 
-use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Date;
 use Laravel\Fortify\Contracts\ConfirmPasswordViewResponse;
 use Laravel\Fortify\Fortify;
+use Laravel\Fortify\Tests\Entities\User;
 use Orchestra\Testbench\Attributes\WithConfig;
+
 class ConfirmablePasswordControllerTest extends OrchestraTestCase
 {
-    protected $user;
+    protected User $user;
 
-    protected function afterRefreshingDatabase()
+    protected function setUp(): void
     {
-        $this->user = TestConfirmPasswordUser::forceCreate([
+        parent::setUp();
+
+        $this->user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -198,18 +201,4 @@ class ConfirmablePasswordControllerTest extends OrchestraTestCase
             ->assertJson(['confirmed' => false])
             ->assertHeaderMissing('X-Retry-After');
     }
-
-    protected function defineEnvironment($app)
-    {
-        parent::defineEnvironment($app);
-
-        $app['config']->set([
-            'auth.providers.users.model' => TestConfirmPasswordUser::class,
-        ]);
-    }
-}
-
-class TestConfirmPasswordUser extends User
-{
-    protected $table = 'users';
 }

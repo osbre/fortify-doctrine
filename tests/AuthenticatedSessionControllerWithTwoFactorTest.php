@@ -10,20 +10,17 @@ use Laravel\Fortify\Events\TwoFactorAuthenticationChallenged;
 use Laravel\Fortify\Events\TwoFactorAuthenticationFailed;
 use Laravel\Fortify\Events\ValidTwoFactorAuthenticationCodeProvided;
 use Laravel\Fortify\Features;
-use Laravel\Fortify\Tests\Models\UserWithTwoFactor;
 use Orchestra\Testbench\Attributes\DefineEnvironment;
-use Orchestra\Testbench\Attributes\WithConfig;
 use PragmaRX\Google2FA\Google2FA;
 
 #[DefineEnvironment('withTwoFactorAuthentication')]
-#[WithConfig('auth.providers.users.model', UserWithTwoFactor::class)]
 class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
 {
     public function test_user_is_redirected_to_challenge_when_using_two_factor_authentication()
     {
         Event::fake();
 
-        UserWithTwoFactor::forceCreate([
+        $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -45,7 +42,7 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
     {
         Event::fake();
 
-        UserWithTwoFactor::forceCreate([
+        $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -65,12 +62,12 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
     {
         Event::fake();
 
-        UserWithTwoFactor::forceCreate([
+        $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
             'two_factor_secret' => 'test-secret',
-            'two_factor_confirmed_at' => now(),
+            'two_factor_confirmed_at' => new \DateTime(),
         ]);
 
         $response = $this->withoutExceptionHandling()->post('/login', [
@@ -84,7 +81,7 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
     #[DefineEnvironment('withoutTwoFactorAuthentication')]
     public function test_user_can_authenticate_when_two_factor_challenge_is_disabled()
     {
-        UserWithTwoFactor::forceCreate([
+        $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -107,12 +104,14 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
 
         $this->app['config']->set('hashing.rehash_on_login', true);
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => Hash::make('secret', ['rounds' => 6]),
             'two_factor_secret' => 'test-secret',
         ]);
+
+        $oldPassword = $user->password;
 
         $response = $this->withoutExceptionHandling()->post('/login', [
             'email' => 'taylor@laravel.com',
@@ -121,8 +120,9 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
 
         $response->assertRedirect('/two-factor-challenge');
 
-        $this->assertNotSame($user->password, $user->fresh()->password);
-        $this->assertTrue(Hash::check('secret', $user->fresh()->password));
+        $this->em->refresh($user);
+        $this->assertNotSame($oldPassword, $user->password);
+        $this->assertTrue(Hash::check('secret', $user->password));
     }
 
     public function test_does_not_rehash_user_password_when_redirecting_to_two_factor_challenge_if_rehashing_on_login_is_disabled()
@@ -133,12 +133,14 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
 
         $this->app['config']->set('hashing.rehash_on_login', false);
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => Hash::make('secret', ['rounds' => 6]),
             'two_factor_secret' => 'test-secret',
         ]);
+
+        $oldPassword = $user->password;
 
         $response = $this->withoutExceptionHandling()->post('/login', [
             'email' => 'taylor@laravel.com',
@@ -147,7 +149,8 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
 
         $response->assertRedirect('/two-factor-challenge');
 
-        $this->assertSame($user->password, $user->fresh()->password);
+        $this->em->refresh($user);
+        $this->assertSame($oldPassword, $user->password);
     }
 
     public function test_two_factor_challenge_can_be_passed_via_code()
@@ -158,7 +161,7 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
         $userSecret = $tfaEngine->generateSecretKey();
         $validOtp = $tfaEngine->getCurrentOtp($userSecret);
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -182,7 +185,7 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
     {
         Event::fake();
 
-        UserWithTwoFactor::forceCreate([
+        $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -211,7 +214,7 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
         $currentTs = $tfaEngine->getTimestamp();
         $previousOtp = $tfaEngine->oathTotp($userSecret, $currentTs - 1);
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -236,7 +239,7 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
     {
         Event::fake();
 
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -255,12 +258,13 @@ class AuthenticatedSessionControllerWithTwoFactorTest extends OrchestraTestCase
         $response->assertRedirect('/home')
             ->assertSessionMissing('login.id');
         $this->assertNotNull(Auth::getUser());
-        $this->assertNotContains('valid-code', json_decode(decrypt($user->fresh()->two_factor_recovery_codes), true));
+        $this->em->refresh($user);
+        $this->assertNotContains('valid-code', json_decode(decrypt($user->twoFactorRecoveryCodes), true));
     }
 
     public function test_two_factor_challenge_can_fail_via_recovery_code()
     {
-        $user = UserWithTwoFactor::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),

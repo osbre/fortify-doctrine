@@ -2,7 +2,6 @@
 
 namespace Laravel\Fortify\Tests;
 
-use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Facades\Event;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
 
@@ -12,7 +11,7 @@ class RecoveryCodeControllerTest extends OrchestraTestCase
     {
         Event::fake();
 
-        $user = TestTwoFactorRecoveryCodeUser::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -26,14 +25,9 @@ class RecoveryCodeControllerTest extends OrchestraTestCase
 
         Event::assertDispatched(RecoveryCodesGenerated::class);
 
-        $user->fresh();
+        $this->em->refresh($user);
 
-        $this->assertNotNull($user->two_factor_recovery_codes);
-        $this->assertIsArray(json_decode(decrypt($user->two_factor_recovery_codes), true));
+        $this->assertNotNull($user->twoFactorRecoveryCodes);
+        $this->assertIsArray(json_decode(decrypt($user->twoFactorRecoveryCodes), true));
     }
-}
-
-class TestTwoFactorRecoveryCodeUser extends User
-{
-    protected $table = 'users';
 }

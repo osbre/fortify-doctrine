@@ -3,7 +3,6 @@
 namespace Laravel\Fortify\Tests;
 
 use App\Actions\Fortify\UpdateUserPassword;
-use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\ValidationException;
@@ -14,7 +13,7 @@ class PasswordControllerTest extends OrchestraTestCase
 {
     public function test_passwords_can_be_updated()
     {
-        $user = UserFactory::new()->create();
+        $user = $this->createUser();
 
         Password::shouldReceive('broker')->andReturn($broker = Mockery::mock(PasswordBroker::class));
 
@@ -42,7 +41,7 @@ class PasswordControllerTest extends OrchestraTestCase
 
     public function test_passwords_cannot_be_updated_without_current_password()
     {
-        $user = UserFactory::new()->create();
+        $user = $this->createUser();
 
         try {
             (new UpdateUserPassword)->update($user, [
@@ -59,7 +58,7 @@ class PasswordControllerTest extends OrchestraTestCase
 
     public function test_passwords_cannot_be_updated_without_current_password_confirmation()
     {
-        $user = UserFactory::new()->create();
+        $user = $this->createUser();
 
         try {
             (new UpdateUserPassword)->update($user, [

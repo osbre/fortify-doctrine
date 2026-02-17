@@ -144,7 +144,7 @@ class RedirectIfTwoFactorAuthenticatable implements RedirectsIfTwoFactorAuthenti
     protected function twoFactorChallengeResponse($request, $user)
     {
         $request->session()->put([
-            'login.id' => $user->getKey(),
+            'login.id' => $user->getAuthIdentifier(),
             'login.remember' => $request->boolean('remember'),
         ]);
 

@@ -5,7 +5,6 @@ namespace Laravel\Fortify\Tests;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Cache\RateLimiter;
 use Illuminate\Contracts\Auth\Authenticatable;
-use Illuminate\Foundation\Auth\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Event;
@@ -30,7 +29,7 @@ class AuthenticatedSessionControllerTest extends OrchestraTestCase
 
     public function test_user_can_authenticate()
     {
-        User::forceCreate([
+        $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -46,7 +45,7 @@ class AuthenticatedSessionControllerTest extends OrchestraTestCase
 
     public function test_validation_exception_returned_on_failure()
     {
-        User::forceCreate([
+        $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -137,7 +136,7 @@ class AuthenticatedSessionControllerTest extends OrchestraTestCase
     {
         app('config')->set('fortify.lowercase_usernames', true);
 
-        User::forceCreate([
+        $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -153,7 +152,7 @@ class AuthenticatedSessionControllerTest extends OrchestraTestCase
 
     public function test_users_can_logout(): void
     {
-        $user = User::forceCreate([
+        $user = $this->createUser([
             'name' => 'Taylor Otwell',
             'email' => 'taylor@laravel.com',
             'password' => bcrypt('secret'),
@@ -164,7 +163,7 @@ class AuthenticatedSessionControllerTest extends OrchestraTestCase
 
         $response->assertRedirect();
         $this->assertGuest();
-        Event::assertDispatched(fn (Logout $logout) => $logout->user->is($user));
+        Event::assertDispatched(fn (Logout $logout) => $logout->user->getAuthIdentifier() === $user->getAuthIdentifier());
     }
 
     public function test_must_be_authenticated_to_logout(): void

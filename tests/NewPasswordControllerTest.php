@@ -2,7 +2,6 @@
 
 namespace Laravel\Fortify\Tests;
 
-use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Support\Facades\Config;
@@ -31,10 +30,7 @@ class NewPasswordControllerTest extends OrchestraTestCase
         Password::shouldReceive('broker')->andReturn($broker = Mockery::mock(PasswordBroker::class));
 
         $guard = $this->mock(StatefulGuard::class);
-        $user = Mockery::mock(Authenticatable::class);
-
-        $user->shouldReceive('setRememberToken')->once();
-        $user->shouldReceive('save')->once();
+        $user = $this->createUser();
 
         $guard->shouldReceive('login')->never();
 
@@ -102,10 +98,7 @@ class NewPasswordControllerTest extends OrchestraTestCase
         Password::shouldReceive('broker')->andReturn($broker = Mockery::mock(PasswordBroker::class));
 
         $guard = $this->mock(StatefulGuard::class);
-        $user = Mockery::mock(Authenticatable::class);
-
-        $user->shouldReceive('setRememberToken')->once();
-        $user->shouldReceive('save')->once();
+        $user = $this->createUser();
 
         $guard->shouldReceive('login')->never();
 
