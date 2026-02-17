@@ -16,12 +16,12 @@ class TwoFactorSecretKeyController extends Controller
      */
     public function show(Request $request)
     {
-        if (is_null($request->user()->two_factor_secret)) {
+        if (is_null($request->user()->twoFactorSecret)) {
             abort(404, 'Two factor authentication has not been enabled.');
         }
 
         return response()->json([
-            'secretKey' => Fortify::currentEncrypter()->decrypt($request->user()->two_factor_secret),
+            'secretKey' => Fortify::currentEncrypter()->decrypt($request->user()->twoFactorSecret),
         ]);
     }
 }

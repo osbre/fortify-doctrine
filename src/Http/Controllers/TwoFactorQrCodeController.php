@@ -15,7 +15,7 @@ class TwoFactorQrCodeController extends Controller
      */
     public function show(Request $request)
     {
-        if (is_null($request->user()->two_factor_secret)) {
+        if (is_null($request->user()->twoFactorSecret)) {
             return [];
         }
 

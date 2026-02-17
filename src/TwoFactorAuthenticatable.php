@@ -8,6 +8,7 @@ use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\Fill;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Doctrine\ORM\EntityManagerInterface;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Events\RecoveryCodeReplaced;
 
@@ -21,11 +22,11 @@ trait TwoFactorAuthenticatable
     public function hasEnabledTwoFactorAuthentication()
     {
         if (Fortify::confirmsTwoFactorAuthentication()) {
-            return ! is_null($this->two_factor_secret) &&
-                   ! is_null($this->two_factor_confirmed_at);
+            return ! is_null($this->twoFactorSecret) &&
+                   ! is_null($this->twoFactorConfirmedAt);
         }
 
-        return ! is_null($this->two_factor_secret);
+        return ! is_null($this->twoFactorSecret);
     }
 
     /**
@@ -35,7 +36,7 @@ trait TwoFactorAuthenticatable
      */
     public function recoveryCodes()
     {
-        return json_decode(Fortify::currentEncrypter()->decrypt($this->two_factor_recovery_codes), true);
+        return json_decode(Fortify::currentEncrypter()->decrypt($this->twoFactorRecoveryCodes), true);
     }
 
     /**
@@ -46,13 +47,13 @@ trait TwoFactorAuthenticatable
      */
     public function replaceRecoveryCode($code)
     {
-        $this->forceFill([
-            'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt(str_replace(
-                $code,
-                RecoveryCode::generate(),
-                Fortify::currentEncrypter()->decrypt($this->two_factor_recovery_codes)
-            )),
-        ])->save();
+        $this->twoFactorRecoveryCodes = Fortify::currentEncrypter()->encrypt(str_replace(
+            $code,
+            RecoveryCode::generate(),
+            Fortify::currentEncrypter()->decrypt($this->twoFactorRecoveryCodes)
+        ));
+
+        app(EntityManagerInterface::class)->flush();
 
         RecoveryCodeReplaced::dispatch($this, $code);
     }
@@ -84,7 +85,7 @@ trait TwoFactorAuthenticatable
         return app(TwoFactorAuthenticationProvider::class)->qrCodeUrl(
             config('app.name'),
             $this->{Fortify::username()},
-            Fortify::currentEncrypter()->decrypt($this->two_factor_secret)
+            Fortify::currentEncrypter()->decrypt($this->twoFactorSecret)
         );
     }
 }

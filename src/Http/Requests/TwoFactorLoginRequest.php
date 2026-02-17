@@ -2,6 +2,7 @@
 
 namespace Laravel\Fortify\Http\Requests;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -56,7 +57,7 @@ class TwoFactorLoginRequest extends FormRequest
     public function hasValidCode()
     {
         return $this->code && tap(app(TwoFactorAuthenticationProvider::class)->verify(
-            Fortify::currentEncrypter()->decrypt($this->challengedUser()->two_factor_secret), $this->code
+            Fortify::currentEncrypter()->decrypt($this->challengedUser()->twoFactorSecret), $this->code
         ), function ($result) {
             if ($result) {
                 $this->session()->forget('login.id');
@@ -98,7 +99,7 @@ class TwoFactorLoginRequest extends FormRequest
         $model = app(StatefulGuard::class)->getProvider()->getModel();
 
         return $this->session()->has('login.id') &&
-            $model::find($this->session()->get('login.id'));
+            app(EntityManagerInterface::class)->find($model, $this->session()->get('login.id'));
     }
 
     /**
@@ -115,7 +116,7 @@ class TwoFactorLoginRequest extends FormRequest
         $model = app(StatefulGuard::class)->getProvider()->getModel();
 
         if (! $this->session()->has('login.id') ||
-            ! $user = $model::find($this->session()->get('login.id'))) {
+            ! $user = app(EntityManagerInterface::class)->find($model, $this->session()->get('login.id'))) {
             throw new HttpResponseException(
                 app(FailedTwoFactorLoginResponse::class)->toResponse($this)
             );

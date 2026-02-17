@@ -2,6 +2,7 @@
 
 namespace Laravel\Fortify\Actions;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Illuminate\Support\Collection;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Events\TwoFactorAuthenticationEnabled;
@@ -18,14 +19,23 @@ class EnableTwoFactorAuthentication
     protected $provider;
 
     /**
+     * The entity manager instance.
+     *
+     * @var \Doctrine\ORM\EntityManagerInterface
+     */
+    protected $em;
+
+    /**
      * Create a new action instance.
      *
      * @param  \Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider  $provider
+     * @param  \Doctrine\ORM\EntityManagerInterface  $em
      * @return void
      */
-    public function __construct(TwoFactorAuthenticationProvider $provider)
+    public function __construct(TwoFactorAuthenticationProvider $provider, EntityManagerInterface $em)
     {
         $this->provider = $provider;
+        $this->em = $em;
     }
 
     /**
@@ -37,15 +47,20 @@ class EnableTwoFactorAuthentication
      */
     public function __invoke($user, $force = false)
     {
-        if (empty($user->two_factor_secret) || $force === true) {
+        if (empty($user->twoFactorSecret) || $force === true) {
             $secretLength = (int) config('fortify-options.two-factor-authentication.secret-length', 16);
 
-            $user->forceFill([
-                'two_factor_secret' => Fortify::currentEncrypter()->encrypt($this->provider->generateSecretKey($secretLength)),
-                'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt(json_encode(Collection::times(8, function () {
+            $user->twoFactorSecret = Fortify::currentEncrypter()->encrypt(
+                $this->provider->generateSecretKey($secretLength)
+            );
+
+            $user->twoFactorRecoveryCodes = Fortify::currentEncrypter()->encrypt(
+                json_encode(Collection::times(8, function () {
                     return RecoveryCode::generate();
-                })->all())),
-            ])->save();
+                })->all())
+            );
+
+            $this->em->flush();
 
             TwoFactorAuthenticationEnabled::dispatch($user);
         }

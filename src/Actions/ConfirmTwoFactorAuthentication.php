@@ -2,6 +2,7 @@
 
 namespace Laravel\Fortify\Actions;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Illuminate\Validation\ValidationException;
 use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
@@ -17,14 +18,23 @@ class ConfirmTwoFactorAuthentication
     protected $provider;
 
     /**
+     * The entity manager instance.
+     *
+     * @var \Doctrine\ORM\EntityManagerInterface
+     */
+    protected $em;
+
+    /**
      * Create a new action instance.
      *
      * @param  \Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider  $provider
+     * @param  \Doctrine\ORM\EntityManagerInterface  $em
      * @return void
      */
-    public function __construct(TwoFactorAuthenticationProvider $provider)
+    public function __construct(TwoFactorAuthenticationProvider $provider, EntityManagerInterface $em)
     {
         $this->provider = $provider;
+        $this->em = $em;
     }
 
     /**
@@ -36,17 +46,17 @@ class ConfirmTwoFactorAuthentication
      */
     public function __invoke($user, $code)
     {
-        if (empty($user->two_factor_secret) ||
+        if (empty($user->twoFactorSecret) ||
             empty($code) ||
-            ! $this->provider->verify(Fortify::currentEncrypter()->decrypt($user->two_factor_secret), $code)) {
+            ! $this->provider->verify(Fortify::currentEncrypter()->decrypt($user->twoFactorSecret), $code)) {
             throw ValidationException::withMessages([
                 'code' => [__('The provided two factor authentication code was invalid.')],
             ])->errorBag('confirmTwoFactorAuthentication');
         }
 
-        $user->forceFill([
-            'two_factor_confirmed_at' => now(),
-        ])->save();
+        $user->twoFactorConfirmedAt = now();
+
+        $this->em->flush();
 
         TwoFactorAuthenticationConfirmed::dispatch($user);
     }

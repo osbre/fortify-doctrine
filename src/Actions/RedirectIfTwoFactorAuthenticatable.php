@@ -52,8 +52,8 @@ class RedirectIfTwoFactorAuthenticatable implements RedirectsIfTwoFactorAuthenti
         $user = $this->validateCredentials($request);
 
         if (Fortify::confirmsTwoFactorAuthentication()) {
-            if (optional($user)->two_factor_secret &&
-                ! is_null(optional($user)->two_factor_confirmed_at) &&
+            if (optional($user)->twoFactorSecret &&
+                ! is_null(optional($user)->twoFactorConfirmedAt) &&
                 in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user))) {
                 return $this->twoFactorChallengeResponse($request, $user);
             } else {
@@ -61,7 +61,7 @@ class RedirectIfTwoFactorAuthenticatable implements RedirectsIfTwoFactorAuthenti
             }
         }
 
-        if (optional($user)->two_factor_secret &&
+        if (optional($user)->twoFactorSecret &&
             in_array(TwoFactorAuthenticatable::class, class_uses_recursive($user))) {
             return $this->twoFactorChallengeResponse($request, $user);
         }

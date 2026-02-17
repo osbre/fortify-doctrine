@@ -45,8 +45,8 @@ trait InteractsWithTwoFactorState
      */
     protected function hasJustBegunConfirmingTwoFactorAuthentication()
     {
-        return ! is_null($this->user()->two_factor_secret) &&
-            is_null($this->user()->two_factor_confirmed_at) &&
+        return ! is_null($this->user()->twoFactorSecret) &&
+            is_null($this->user()->twoFactorConfirmedAt) &&
             $this->session()->has('two_factor_empty_at') &&
             is_null($this->session()->get('two_factor_confirming_at'));
     }
@@ -60,7 +60,7 @@ trait InteractsWithTwoFactorState
     protected function neverFinishedConfirmingTwoFactorAuthentication(int $currentTime)
     {
         return ! $this->session()->hasOldInput('code') &&
-            is_null($this->user()->two_factor_confirmed_at) &&
+            is_null($this->user()->twoFactorConfirmedAt) &&
             $this->session()->get('two_factor_confirming_at', 0) != $currentTime;
     }
 }

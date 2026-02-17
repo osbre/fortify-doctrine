@@ -18,13 +18,13 @@ class RecoveryCodeController extends Controller
      */
     public function index(Request $request)
     {
-        if (! $request->user()->two_factor_secret ||
-            ! $request->user()->two_factor_recovery_codes) {
+        if (! $request->user()->twoFactorSecret ||
+            ! $request->user()->twoFactorRecoveryCodes) {
             return [];
         }
 
         return response()->json(json_decode(Fortify::currentEncrypter()->decrypt(
-            $request->user()->two_factor_recovery_codes
+            $request->user()->twoFactorRecoveryCodes
         ), true));
     }
 
